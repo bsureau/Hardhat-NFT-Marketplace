@@ -11,6 +11,8 @@ error NftMarketplace__AlreadyListed(address nftAddress, uint256 tokenId);
 error NftMarketplace__NotOwner();
 error NftMarketplace__NotListed(address nftAddress, uint256 tokenId);
 error NftMarketplace__PriceNotMet(address nftAddress, uint256 tokenId, uint256 price);
+error NftMarketplace__NoProceeds();
+error NftMarketplace__TransferFailed();
 
 contract NftMarketplace {   
 
@@ -49,7 +51,6 @@ contract NftMarketplace {
         address nftAddress, 
         uint256 tokenId
     ) {
-
         Listing memory listing = s_listings[nftAddress][tokenId];
         if (listing.price > 0) {
             revert NftMarketplace__AlreadyListed(nftAddress, tokenId); 
@@ -61,7 +62,6 @@ contract NftMarketplace {
         address nftAddress,
         uint256 tokenId
     ) {
-        
         Listing memory listing = s_listings[nftAddress][tokenId];
         if (listing.price <= 0 ) {
             revert NftMarketplace__NotListed(nftAddress, tokenId);
@@ -91,7 +91,6 @@ contract NftMarketplace {
         notListed(nftAddress, tokenId) 
         isOwner(nftAddress, tokenId, msg.sender) 
     {
-
         if (price < 0) {
             revert NftMarketplace__PriceMustBeAboveZero();
         }
@@ -113,7 +112,6 @@ contract NftMarketplace {
         payable
         isListed(nftAddress, tokenId)
     {
-
         Listing memory listedItem = s_listings[nftAddress][tokenId];
         if(msg.value < listedItem.price) {
             revert NftMarketplace__PriceNotMet(nftAddress, tokenId, listedItem.price);
@@ -143,6 +141,16 @@ contract NftMarketplace {
         emit ItemListed(msg.sender, nftAddress, tokenId, newPrice);
     }
 
-    // TODO:
-    //Withdraw
+    function withdrawProceeds() external {
+        uint256 proceeds = s_proceeds[msg.sender];
+        if(proceeds <= 0) {
+            revert NftMarketplace__NoProceeds();
+        }
+
+        s_proceeds[msg.sender] = 0;
+        (bool success,) = payable(msg.sender).call{value: proceeds}("");
+        if (!success) {
+            revert NftMarketplace__TransferFailed();
+        }
+    }
 }
