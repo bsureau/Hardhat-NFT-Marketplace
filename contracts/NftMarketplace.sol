@@ -91,7 +91,7 @@ contract NftMarketplace {
         notListed(nftAddress, tokenId) 
         isOwner(nftAddress, tokenId, msg.sender) 
     {
-        if (price < 0) {
+        if (price <= 0) {
             revert NftMarketplace__PriceMustBeAboveZero();
         }
 
